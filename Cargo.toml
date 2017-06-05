@@ -1,0 +1,33 @@
+[package]
+name = "easyvst"
+version = "0.1.0"
+authors = ["Boscop <kingboscop@gmail.com>"]
+
+[dependencies]
+# vst2 = { path = 'D:\projects\forks\rust-vst2' }
+vst2 = { git = 'https://github.com/Boscop/rust-vst2' }
+log = "0.3"
+num-traits = "0.1"
+asprim = "0.1"
+
+[dev-dependencies]
+log-panics = "1.1"
+simplelog = "0.4"
+num-traits = "0.1"
+asprim = "0.1"
+enum_primitive = "0.1"
+# winit = { path = 'D:\projects\forks\winit-vst' }
+winit = { git = 'https://github.com/Boscop/winit-vst' }
+conrod = { version = "0.52", features = ["piston", "glium", "winit"] }
+
+[replace]
+# "winit:0.5.11" = { path = 'D:\projects\forks\winit-vst' }
+"winit:0.5.11" = { git = 'https://github.com/Boscop/winit-vst' }
+
+[[example]]
+name = "easygain"
+crate-type = ["cdylib"]
+
+[[example]]
+name = "conrodgain"
+crate-type = ["cdylib"]
