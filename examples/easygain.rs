@@ -70,8 +70,8 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 
 	fn get_info(&self) -> Info {
 		Info {
-			name: "MyPlugin".to_string(),
-			vendor: "MyVendor".to_string(),
+			name: "easygain".to_string(),
+			vendor: "easyvst".to_string(),
 			unique_id: 0x3456DCBA,
 			category: Category::Effect,
 
