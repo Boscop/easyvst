@@ -7,6 +7,8 @@ pub fn get_folder_path() -> Option<PathBuf> {
 
 	use std::ptr::null_mut;
 	use std::mem;
+	use std::ffi::OsString;
+	use std::os::windows::ffi::OsStringExt;
 
 	const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
 	const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
@@ -19,11 +21,9 @@ pub fn get_folder_path() -> Option<PathBuf> {
 			None
 		} else {
 			let mut path: [WCHAR; MAX_PATH + 1] = mem::zeroed();
-			kernel32::GetModuleFileNameW(hm, path.as_mut_ptr(), mem::size_of_val(&path) as u32);
-			let len = path.iter().position(|&c| c == 0).unwrap();
- 			let file_path = String::from_utf16_lossy(&path[..len]);
-			let folder_path = Path::new(&file_path).parent().unwrap().into();
-			Some(folder_path)
+			let len = kernel32::GetModuleFileNameW(hm, path.as_mut_ptr(), mem::size_of_val(&path) as u32) as usize;
+			let file_path = OsString::from_wide(&path[..len]);
+			Path::new(&file_path).parent().map(Into::into)
 		}
 	}
 }
