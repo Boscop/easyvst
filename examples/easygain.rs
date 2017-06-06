@@ -104,13 +104,13 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	}
 
 	fn init(&mut self) {
+		#[cfg(windows)]      let my_folder = fs::get_folder_path().unwrap();
+		#[cfg(not(windows))] let my_folder = ::std::path::PathBuf::from(".");
+		let log_file = File::create(my_folder.join("easygain.log")).unwrap();
 		use std::fs::File;
-		let _ = CombinedLogger::init(
-			vec![
-				WriteLogger::new(LogLevelFilter::Info, Config::default(), File::create("vst.log").unwrap()),
-			]
-		);
+		let _ = CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
 		info!("init in host {:?}", self.state.host.get_info());
+		info!("my folder {:?}", my_folder);
 	}
 
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>) {

@@ -1,6 +1,6 @@
 /*
 	ATTENTION:
-	you need to have a font.ttf in the current working directory of your VST host
+	you need to have a font.ttf in the same folder as this VST
 	or change the path to the font below
 	otherwise this plugin won't load correctly
 */
@@ -29,6 +29,8 @@ use vst2::editor::Editor;
 use easyvst::*;
 use easyvst::util::*;
 
+use std::path::{Path, PathBuf};
+
 easyvst!(ParamId, MyState, MyPlugin);
 
 enum_from_primitive! {
@@ -41,6 +43,7 @@ enum_from_primitive! {
 
 #[derive(Default)]
 struct MyState {
+	my_folder: PathBuf,
 	gain_amp: f32,
 }
 
@@ -115,13 +118,14 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	}
 
 	fn init(&mut self) {
+		#[cfg(windows)]      let my_folder = fs::get_folder_path().unwrap();
+		#[cfg(not(windows))] let my_folder = ::std::path::PathBuf::from(".");
+		let log_file = File::create(my_folder.join("conrodgain.log")).unwrap();
 		use std::fs::File;
-		let _ = CombinedLogger::init(
-			vec![
-				WriteLogger::new(LogLevelFilter::Info, Config::default(), File::create("vst.log").unwrap()),
-			]
-		);
+		let _ = CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
 		info!("init in host {:?}", self.state.host.get_info());
+		info!("my folder {:?}", my_folder);
+		self.state.user_state.my_folder = my_folder;
 	}
 
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>) {
@@ -159,7 +163,7 @@ pub enum AppError {
 }
 
 impl UiState {
-	pub fn new(display: glium::Display) -> Result<Self, AppError> {
+	pub fn new(my_folder: &Path, display: glium::Display) -> Result<Self, AppError> {
 		let (width, height) = display.get_window()
 			.ok_or(AppError::GetWindowFail)
 			.and_then({|window|
@@ -172,7 +176,7 @@ impl UiState {
 
 		let mut ui = conrod::UiBuilder::new([width as f64, height as f64]).build();
 
-		ui.fonts.insert_from_file("font.ttf").unwrap();
+		ui.fonts.insert_from_file(my_folder.join("font.ttf")).unwrap();
 
 		let renderer = match conrod::backend::glium::Renderer::new(&display) {
 			Ok(r) => r,
@@ -278,7 +282,7 @@ impl Editor for MyPlugin {
 		.build_glium() {
 			Ok(display) => {
 				trace!("window created");
-				match UiState::new(display) {
+				match UiState::new(&self.state.user_state.my_folder, display) {
 					Ok(ui) => self.ui = Some(ui),
 					Err(e) => error!("creating ui failed: {:?}", e)
 				}

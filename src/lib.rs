@@ -2,6 +2,10 @@ extern crate vst2;
 #[macro_use] extern crate log;
 extern crate num_traits;
 extern crate asprim;
+#[cfg(windows)]
+extern crate winapi;
+#[cfg(windows)]
+extern crate kernel32;
 
 use vst2::buffer::AudioBuffer;
 use vst2::plugin::{HostCallback, Plugin, Info, CanDo};
@@ -18,6 +22,7 @@ use std::os::raw::c_void;
 pub mod util;
 mod param;
 mod state;
+pub mod fs;
 
 pub use param::*;
 pub use state::*;
