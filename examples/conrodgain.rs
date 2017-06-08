@@ -5,24 +5,23 @@
 	otherwise this plugin won't load correctly
 */
 
+#[macro_use] extern crate vst2;
+#[macro_use] extern crate easyvst;
 #[macro_use] extern crate log;
 extern crate log_panics;
 extern crate simplelog;
 extern crate num_traits;
 extern crate asprim;
-#[macro_use] extern crate enum_primitive;
-#[macro_use] extern crate vst2;
-#[macro_use] extern crate easyvst;
 extern crate winit;
 #[macro_use] extern crate conrod;
 
 use simplelog::*;
 
-use num_traits::{FromPrimitive, Float};
+use num_traits::Float;
 use asprim::AsPrim;
 
 use vst2::buffer::AudioBuffer;
-use vst2::plugin::{Category, Info};
+use vst2::plugin::{Category, Info, HostCallback};
 use vst2::host::Host;
 use vst2::editor::Editor;
 
@@ -33,12 +32,10 @@ use std::path::{Path, PathBuf};
 
 easyvst!(ParamId, MyState, MyPlugin);
 
-enum_from_primitive! {
-	#[repr(usize)]
-	#[derive(Debug, Copy, Clone)]
-	pub enum ParamId {
-		GainDb,
-	}
+#[repr(usize)]
+#[derive(Debug, Copy, Clone)]
+pub enum ParamId {
+	GainDb,
 }
 
 #[derive(Default)]
@@ -48,11 +45,19 @@ struct MyState {
 }
 
 impl UserState<ParamId> for MyState {
-	fn param_changed(&mut self, param_id: ParamId, val: f32) {
-		info!("param_changed {:?} {:.3}", param_id, val.as_f32());
+	fn param_changed(&mut self, _host: &mut HostCallback, param_id: ParamId, val: f32) {
+		info!("param_changed {:?} {:.2}", param_id, val);
 		use ParamId::*;
 		match param_id {
 			GainDb => self.gain_amp = db_to_amp(val),
+		}
+	}
+
+	fn format_param(&self, param_id: ParamId, val: f32) -> String {
+		info!("format_param {:?} {:.2}", param_id, val);
+		use ParamId::*;
+		match param_id {
+			GainDb => format!("{:.2} dB", val),
 		}
 	}
 }
@@ -66,7 +71,7 @@ struct MyPlugin {
 }
 
 impl MyPlugin {
-	fn process_one_channel<T: Float + AsPrim>(&mut self, input: &[T], output: &mut [T]) {
+	fn process_one_channel<F: Float + AsPrim>(&mut self, input: &[F], output: &mut [F]) {
 		for (input_sample, output_sample) in input.iter().zip(output) {
 			*output_sample = *input_sample * self.state.user_state.gain_amp.as_();
 		}
@@ -74,13 +79,15 @@ impl MyPlugin {
 }
 
 impl EasyVst<ParamId, MyState> for MyPlugin {
-	fn state(&self) -> &MyPluginState {
-		&self.state
+	fn params() -> Vec<ParamDef> {
+		vec![
+			ParamDef::new("Gain", -48., 12., 0.),
+		]
 	}
 
-	fn state_mut(&mut self) -> &mut MyPluginState {
-		&mut self.state
-	}
+	fn state(&self) -> &MyPluginState { &self.state }
+
+	fn state_mut(&mut self) -> &mut MyPluginState { &mut self.state }
 
 	fn get_info(&self) -> Info {
 		Info {
@@ -94,20 +101,6 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 			parameters: 1,
 
 			..Info::default()
-		}
-	}
-
-	fn params() -> Vec<ParamDef> {
-		vec![
-			ParamDef::new("Gain", (-48.0).as_(), 12.0.as_(), 0.0.as_()),
-		]
-	}
-
-	fn format_param(param_id: ParamId, val: f32) -> String {
-		info!("format_param {:?} {:.3}", param_id, val.as_f32());
-		use ParamId::*;
-		match param_id {
-			GainDb => format!("{:.3} dB", val.as_f32()),
 		}
 	}
 

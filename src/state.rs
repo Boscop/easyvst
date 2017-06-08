@@ -8,7 +8,8 @@ use std::marker::PhantomData;
 use param::*;
 
 pub trait UserState<PID>: Default {
-	fn param_changed(&mut self, param_id: PID, val: f32);
+	fn param_changed(&mut self, host: &mut HostCallback, param_id: PID, val: f32);
+	fn format_param(&self, param_id: PID, val: f32) -> String;
 }
 
 #[derive(Default)]
@@ -41,7 +42,7 @@ impl<PID: Into<usize> + Copy, S: UserState<PID>> PluginState<PID, S> {
 		let pid = param_id.into();
 		let param = &mut self.params[pid];
 		param.set(val);
-		self.user_state.param_changed(param_id, val.as_());
+		self.user_state.param_changed(&mut self.host, param_id, val.as_());
 		self.host.automate(pid as i32, param.norm());
 	}
 

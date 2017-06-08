@@ -14,7 +14,7 @@ use vst2::api::Supported;
 use vst2::event::Event;
 use vst2::channels::ChannelInfo;
 
-use num_traits::{FromPrimitive, Float};
+use num_traits::Float;
 use asprim::AsPrim;
 
 use std::os::raw::c_void;
@@ -33,7 +33,6 @@ macro_rules! impl_clike {
 		$(
 			impl From<$c> for $t {
 				fn from(v: $c) -> $t {
-					// FromPrimitive::from_usize(v as usize).unwrap()
 					use std::mem;
 					unsafe { mem::transmute(v as usize) }
 				}
@@ -57,13 +56,13 @@ macro_rules! easyvst {
 		impl_clike!($param);
 		plugin_main!(EasyVstWrapper<$param, $state, $plugin>);
 		impl Default for $param {
-			fn default() -> Self { Self::from_usize(0).unwrap() }
+			fn default() -> Self { 0.into() }
 		}
 	}
 }
 
 #[allow(unused_variables)]
-pub trait EasyVst<PID: FromPrimitive, S: UserState<PID>> {
+pub trait EasyVst<PID, S: UserState<PID>> {
 	fn get_info(&self) -> Info;
 	fn new(state: PluginState<PID, S>) -> Self;
 	fn init(&mut self) {}
@@ -103,30 +102,30 @@ pub trait EasyVst<PID: FromPrimitive, S: UserState<PID>> {
 	fn state(&self) -> &PluginState<PID, S>;
 	fn state_mut(&mut self) -> &mut PluginState<PID, S>;
 	fn params() -> Vec<ParamDef>;
-	fn format_param(param_id: PID, val: f32) -> String;
-	// fn param_changed(&mut self, param_id: PID, val: ParamType);
+	// fn format_param(param_id: PID, val: f32) -> String;
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>);
 }
 
 use std::marker::PhantomData;
 
 #[derive(Default)]
-pub struct EasyVstWrapper<PID: FromPrimitive, S: UserState<PID>, P: EasyVst<PID, S>>(P, PhantomData<fn(PID, S)>);
+pub struct EasyVstWrapper<PID, S: UserState<PID>, P: EasyVst<PID, S>>(P, PhantomData<fn(PID, S)>);
 
-impl<PID: FromPrimitive + Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
 	fn get_info(&self) -> Info { self.0.get_info() }
 
 	fn new(host: HostCallback) -> Self {
 		let params = P::params();
 		let param_count = params.len();
-		let mut r = P::new(PluginState::new(host, params));
-		for i in 0..param_count {
-			let val = r.state().params[i].val;
-			// r.param_changed(PID::from_usize(i).unwrap(), val);
-			// let pid = PID::from_usize(i).unwrap();
-			r.state_mut().user_state.param_changed(i.into(), val);
+		let mut p = P::new(PluginState::new(host, params));
+		{
+			let state = p.state_mut();
+			for i in 0..param_count {
+				let val = state.params[i].val;
+				state.user_state.param_changed(&mut state.host, i.into(), val);
+			}
 		}
-		EasyVstWrapper(r, PhantomData)
+		EasyVstWrapper(p, PhantomData)
 	}
 
 	fn init(&mut self) { self.0.init(); }
@@ -181,13 +180,12 @@ impl<PID: FromPrimitive + Into<usize> + From<usize> + Copy, S: UserState<PID>, P
 	}
 
 	fn set_parameter(&mut self, index: i32, val: f32) {
-		trace!("set_parameter {} {:.3}", index, val);
+		trace!("set_parameter {} {:.2}", index, val);
 		let i = index as usize;
 		self.0.state_mut().user_sets_param_norm(i, val);
 		let val = self.0.state().params[i].val;
-		// self.0.param_changed(PID::from_usize(i).unwrap(), val);
-		// let pid = PID::from_usize(i).unwrap();
-		self.0.state_mut().user_state.param_changed(i.into(), val);
+		let state = self.0.state_mut();
+		state.user_state.param_changed(&mut state.host, i.into(), val);
 	}
 
 	fn get_parameter_name(&self, index: i32) -> String {
@@ -201,7 +199,7 @@ impl<PID: FromPrimitive + Into<usize> + From<usize> + Copy, S: UserState<PID>, P
 	fn get_parameter_label(&self, index: i32) -> String {
 		let i = index as usize;
 		let val = self.0.state().params[i].val;
-		P::format_param(PID::from_usize(i).unwrap(), val)
+		self.0.state().user_state.format_param(i.into(), val)
 	}
 
 	fn process(&mut self, buffer: AudioBuffer<f32>) {
