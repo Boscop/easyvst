@@ -1,3 +1,4 @@
+use num_traits::clamp;
 use asprim::AsPrim;
 
 use util::*;

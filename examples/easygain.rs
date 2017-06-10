@@ -16,7 +16,6 @@ use vst2::plugin::{Category, Info, HostCallback};
 use vst2::host::Host;
 
 use easyvst::*;
-use easyvst::util::*;
 
 easyvst!(ParamId, MyState, MyPlugin);
 
@@ -106,13 +105,20 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		info!("my folder {:?}", my_folder);
 	}
 
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>) {
-		// split out the input and output buffers into two vectors
-		let (inputs, outputs) = buffer.split();
-
+	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
 		// for each buffer, transform the samples
-		for (input_buffer, output_buffer) in inputs.iter().zip(outputs) {
+		for (input_buffer, output_buffer) in buffer.zip() {
 			self.process_one_channel(input_buffer, output_buffer);
 		}
 	}
+}
+
+#[inline]
+pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F {
+	20.0.as_::<F>() * x.log10()
+}
+
+#[inline]
+pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F {
+	10.0.as_::<F>().powf(x / 20.0.as_())
 }

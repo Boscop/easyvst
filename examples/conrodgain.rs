@@ -26,7 +26,6 @@ use vst2::host::Host;
 use vst2::editor::Editor;
 
 use easyvst::*;
-use easyvst::util::*;
 
 use std::path::{Path, PathBuf};
 
@@ -121,12 +120,9 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		self.state.user_state.my_folder = my_folder;
 	}
 
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>) {
-		// split out the input and output buffers into two vectors
-		let (inputs, outputs) = buffer.split();
-
+	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
 		// for each buffer, transform the samples
-		for (input_buffer, output_buffer) in inputs.iter().zip(outputs) {
+		for (input_buffer, output_buffer) in buffer.zip() {
 			self.process_one_channel(input_buffer, output_buffer);
 		}
 	}
@@ -300,4 +296,14 @@ impl Editor for MyPlugin {
 		trace!("is_open");
 		self.ui.is_some()
 	}
+}
+
+#[inline]
+pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F {
+	20.0.as_::<F>() * x.log10()
+}
+
+#[inline]
+pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F {
+	10.0.as_::<F>().powf(x / 20.0.as_())
 }

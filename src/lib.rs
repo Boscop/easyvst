@@ -10,8 +10,7 @@ extern crate kernel32;
 use vst2::buffer::AudioBuffer;
 use vst2::plugin::{HostCallback, Plugin, Info, CanDo};
 use vst2::editor::Editor;
-use vst2::api::Supported;
-use vst2::event::Event;
+use vst2::api::{self, Supported};
 use vst2::channels::ChannelInfo;
 
 use num_traits::Float;
@@ -82,7 +81,7 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 		Supported::Maybe
 	}
 	fn get_tail_size(&self) -> isize { 0 }
-	fn process_events(&mut self, events: Vec<Event>) {}
+	fn process_events(&mut self, events: &api::Events) {}
 	fn get_editor(&mut self) -> Option<&mut Editor> { None }
 	fn get_preset_data(&mut self) -> Vec<u8> { Vec::new() }
 	fn get_bank_data(&mut self) -> Vec<u8> { Vec::new() }
@@ -103,7 +102,7 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 	fn state_mut(&mut self) -> &mut PluginState<PID, S>;
 	fn params() -> Vec<ParamDef>;
 	// fn format_param(param_id: PID, val: f32) -> String;
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: AudioBuffer<T>);
+	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>);
 }
 
 use std::marker::PhantomData;
@@ -158,7 +157,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 
 	fn get_tail_size(&self) -> isize { self.0.get_tail_size() }
 
-	fn process_events(&mut self, events: Vec<Event>) { self.0.process_events(events); }
+	fn process_events(&mut self, events: &api::Events) { self.0.process_events(events); }
 
 	fn get_editor(&mut self) -> Option<&mut Editor> { self.0.get_editor() }
 
@@ -202,11 +201,11 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		self.0.state().user_state.format_param(i.into(), val)
 	}
 
-	fn process(&mut self, buffer: AudioBuffer<f32>) {
+	fn process(&mut self, buffer: &mut AudioBuffer<f32>) {
 		self.0.process_f(buffer);
 	}
 
-	fn process_f64(&mut self, buffer: AudioBuffer<f64>) {
+	fn process_f64(&mut self, buffer: &mut AudioBuffer<f64>) {
 		self.0.process_f(buffer);
 	}
 }

@@ -1,29 +1,18 @@
-use num_traits::{Float, Num, NumCast};
+use num_traits::Float;
 
-pub fn lerp<T: Num + Copy>(x1: T, x2: T, y1: T, y2: T, x: T) -> T {
+pub fn lerp<F: Float>(x1: F, x2: F, y1: F, y2: F, x: F) -> F {
 	let denom = x2 - x1;
-	if denom == T::zero() {
-		y1 // should never happen
+	if denom == F::zero() {
+		y1 // should not ever happen
 	} else {
 		// calculate decimal position of x
 		let dx = (x - x1)/denom;
 		// use weighted sum method of interpolating
-		dx*y2 + (T::one() - dx)*y1
+		dx*y2 + (F::one() - dx)*y1
 	}
 }
 
-pub fn lerp_r<T: Num + Copy>(x1: T, x2: T, y1: T, y2: T, y: T) -> T {
+#[inline]
+pub fn lerp_r<F: Float>(x1: F, x2: F, y1: F, y2: F, y: F) -> F {
 	lerp(y1, y2, x1, x2, y)
-}
-
-pub fn clamp<T: PartialOrd>(x: T, min: T, max: T) -> T {
-	if x < min { min } else if x > max { max } else { x }
-}
-
-pub fn amp_to_db<T: Float + NumCast>(x: T) -> T {
-	T::from(20.).unwrap() * x.log10()
-}
-
-pub fn db_to_amp<T: Float + NumCast>(x: T) -> T {
-	T::from(10.0).unwrap().powf(x / T::from(20.).unwrap())
 }
