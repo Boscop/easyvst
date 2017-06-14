@@ -4,8 +4,8 @@ version = "0.1.0"
 authors = ["Boscop <kingboscop@gmail.com>"]
 
 [dependencies]
-# vst2 = { path = 'D:\projects\forks\rust-vst2' }
-vst2 = { git = 'https://github.com/Boscop/rust-vst2', branch = 'optimized' }
+# vst2 = { path = 'D:\projects\forks\rust-vst2', features = ['nightly'] }
+vst2 = { git = 'https://github.com/Boscop/rust-vst2', branch = 'optimized', features = ['nightly'] }
 log = "0.3"
 num-traits = "0.1"
 asprim = "0.1"

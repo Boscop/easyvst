@@ -24,6 +24,7 @@ use vst2::buffer::AudioBuffer;
 use vst2::plugin::{Category, Info, HostCallback};
 use vst2::host::Host;
 use vst2::editor::Editor;
+use vst2::api::Events;
 
 use easyvst::*;
 
@@ -120,7 +121,7 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		self.state.user_state.my_folder = my_folder;
 	}
 
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
+	fn process<T: Float + AsPrim>(&mut self, _events: &Events, buffer: &mut AudioBuffer<T>) {
 		// for each buffer, transform the samples
 		for (input_buffer, output_buffer) in buffer.zip() {
 			self.process_one_channel(input_buffer, output_buffer);

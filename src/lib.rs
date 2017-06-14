@@ -1,3 +1,5 @@
+#![feature(const_fn)]
+
 extern crate vst2;
 #[macro_use] extern crate log;
 extern crate num_traits;
@@ -65,23 +67,22 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 	fn get_info(&self) -> Info;
 	fn new(state: PluginState<PID, S>) -> Self;
 	fn init(&mut self) {}
-	fn change_preset(&mut self, preset: i32) { }
+	fn change_preset(&mut self, preset: i32) {}
 	fn get_preset_num(&self) -> i32 { 0 }
-	fn set_preset_name(&mut self, name: String) { }
+	fn set_preset_name(&mut self, name: String) {}
 	fn get_preset_name(&self, preset: i32) -> String { "".to_string() }
 	fn can_be_automated(&self, index: i32) -> bool { true }
 	fn string_to_parameter(&mut self, index: i32, text: String) -> bool { false }
-	fn set_sample_rate(&mut self, rate: f32) { }
-	fn set_block_size(&mut self, size: i64) { }
-	fn resume(&mut self) { }
-	fn suspend(&mut self) { }
+	fn set_sample_rate(&mut self, rate: f32) {}
+	fn set_block_size(&mut self, size: i64) {}
+	fn resume(&mut self) {}
+	fn suspend(&mut self) {}
 	fn vendor_specific(&mut self, index: i32, value: isize, ptr: *mut c_void, opt: f32) -> isize { 0 }
 	fn can_do(&self, can_do: CanDo) -> Supported {
 		trace!("Host is asking if plugin can: {:?}.", can_do);
 		Supported::Maybe
 	}
 	fn get_tail_size(&self) -> isize { 0 }
-	fn process_events(&mut self, events: &api::Events) {}
 	fn get_editor(&mut self) -> Option<&mut Editor> { None }
 	fn get_preset_data(&mut self) -> Vec<u8> { Vec::new() }
 	fn get_bank_data(&mut self) -> Vec<u8> { Vec::new() }
@@ -101,14 +102,33 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 	fn state(&self) -> &PluginState<PID, S>;
 	fn state_mut(&mut self) -> &mut PluginState<PID, S>;
 	fn params() -> Vec<ParamDef>;
-	// fn format_param(param_id: PID, val: f32) -> String;
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>);
+	fn process<T: Float + AsPrim>(&mut self, events: &api::Events, buffer: &mut AudioBuffer<T>);
 }
 
 use std::marker::PhantomData;
 
 #[derive(Default)]
 pub struct EasyVstWrapper<PID, S: UserState<PID>, P: EasyVst<PID, S>>(P, PhantomData<fn(PID, S)>);
+
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> EasyVstWrapper<PID, S, P> {
+	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
+		use std::ptr::{null, null_mut};
+		let empty: api::Events = api::Events {
+			num_events: 0,
+			_reserved: 0,
+			events: [null_mut(); 2]
+		};
+		let api_events = self.0.state().api_events;
+		let events = if api_events.is_null() {
+			&empty
+		} else {
+			unsafe { &*api_events }
+		};
+		self.0.process(events, buffer);
+		self.0.state_mut().api_events = null();
+	}
+}
+
 
 impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
 	fn get_info(&self) -> Info { self.0.get_info() }
@@ -157,7 +177,10 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 
 	fn get_tail_size(&self) -> isize { self.0.get_tail_size() }
 
-	fn process_events(&mut self, events: &api::Events) { self.0.process_events(events); }
+	fn process_events(&mut self, events: &api::Events) {
+		let state = self.0.state_mut();
+		state.api_events = events as *const _;
+	}
 
 	fn get_editor(&mut self) -> Option<&mut Editor> { self.0.get_editor() }
 
@@ -202,10 +225,10 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 	}
 
 	fn process(&mut self, buffer: &mut AudioBuffer<f32>) {
-		self.0.process_f(buffer);
+		self.process_f(buffer);
 	}
 
 	fn process_f64(&mut self, buffer: &mut AudioBuffer<f64>) {
-		self.0.process_f(buffer);
+		self.process_f(buffer);
 	}
 }

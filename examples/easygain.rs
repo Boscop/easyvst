@@ -11,9 +11,10 @@ use simplelog::*;
 use num_traits::Float;
 use asprim::AsPrim;
 
-use vst2::buffer::AudioBuffer;
-use vst2::plugin::{Category, Info, HostCallback};
+use vst2::buffer::{AudioBuffer, SendEventBuffer};
+use vst2::plugin::{Category, Info, HostCallback, CanDo};
 use vst2::host::Host;
+use vst2::api::Events;
 
 use easyvst::*;
 
@@ -28,6 +29,7 @@ pub enum ParamId {
 #[derive(Default)]
 struct MyState {
 	gain_amp: f32,
+	send_buffer: SendEventBuffer,
 }
 
 impl UserState<ParamId> for MyState {
@@ -96,7 +98,7 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	}
 
 	fn init(&mut self) {
-		#[cfg(windows)]      let my_folder = fs::get_folder_path().unwrap();
+		#[cfg(windows)]	  let my_folder = fs::get_folder_path().unwrap();
 		#[cfg(not(windows))] let my_folder = ::std::path::PathBuf::from(".");
 		let log_file = File::create(my_folder.join("easygain.log")).unwrap();
 		use std::fs::File;
@@ -105,10 +107,31 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		info!("my folder {:?}", my_folder);
 	}
 
-	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
+	fn process<T: Float + AsPrim>(&mut self, events: &Events, buffer: &mut AudioBuffer<T>) {
 		// for each buffer, transform the samples
 		for (input_buffer, output_buffer) in buffer.zip() {
 			self.process_one_channel(input_buffer, output_buffer);
+		}
+		// forward all midi events
+		use vst2::event::Event;
+		let state = &mut self.state.user_state;
+		let events = events.events().filter_map(|e| {
+			match e {
+				Event::Midi(e) => Some(e),
+				_ => None
+			}
+		});
+		state.send_buffer.store_midi(events);
+		self.state.host.process_events(state.send_buffer.events());
+	}
+
+	fn can_do(&self, can_do: CanDo) -> vst2::api::Supported {
+		use vst2::api::Supported::*;
+		use vst2::plugin::CanDo::*;
+
+		match can_do {
+			SendEvents | SendMidiEvent | ReceiveEvents | ReceiveMidiEvent => Yes,
+			_ => No,
 		}
 	}
 }
