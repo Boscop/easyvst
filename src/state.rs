@@ -9,8 +9,7 @@ use std::ptr::null;
 
 use param::*;
 
-pub trait UserState<PID> {
-	fn new() -> Self where Self: Sized;
+pub trait UserState<PID>: Default {
 	fn param_changed(&mut self, host: &mut HostCallback, param_id: PID, val: f32);
 	fn format_param(&self, param_id: PID, val: f32) -> String;
 }
@@ -28,7 +27,7 @@ impl<PID: Into<usize> + Copy, S: UserState<PID>> PluginState<PID, S> {
 		Self {
 			host: host,
 			params: params.into_iter().map(Param::new).collect(),
-			user_state: S::new(),
+			user_state: Default::default(),
 			api_events: null(),
 			phantom: PhantomData,
 		}
@@ -63,7 +62,7 @@ impl<PID: Into<usize> + Copy, S: UserState<PID>> Default for PluginState<PID, S>
 		Self {
 			host: Default::default(),
 			params: Default::default(),
-			user_state: S::new(),
+			user_state: Default::default(),
 			api_events: null(),
 			phantom: Default::default(),
 		}
