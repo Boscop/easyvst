@@ -10,7 +10,7 @@ extern crate winapi;
 extern crate kernel32;
 
 use vst2::buffer::AudioBuffer;
-use vst2::plugin::{HostCallback, Plugin, Info, CanDo};
+use vst2::plugin::{HostCallback, Plugin, Info, CanDo, NewFromHost};
 use vst2::editor::Editor;
 use vst2::api::{self, Supported};
 use vst2::channels::ChannelInfo;
@@ -129,10 +129,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 	}
 }
 
-
-impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
-	fn get_info(&self) -> Info { self.0.get_info() }
-
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> NewFromHost for EasyVstWrapper<PID, S, P> {
 	fn new(host: HostCallback) -> Self {
 		let params = P::params();
 		let param_count = params.len();
@@ -146,6 +143,10 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		}
 		EasyVstWrapper(p, PhantomData)
 	}
+}
+
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
+	fn get_info(&self) -> Info { self.0.get_info() }
 
 	fn init(&mut self) { self.0.init(); }
 
