@@ -111,6 +111,7 @@ use std::marker::PhantomData;
 pub struct EasyVstWrapper<PID, S: UserState<PID>, P: EasyVst<PID, S>>(P, PhantomData<fn(PID, S)>);
 
 impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> EasyVstWrapper<PID, S, P> {
+	#[inline(always)]
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
 		use std::ptr::{null, null_mut};
 		let empty: api::Events = api::Events {
@@ -128,7 +129,26 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		self.0.state_mut().api_events = null();
 	}
 }
-
+/*
+macro_rules! process_with_midi {
+	($self:expr, $float:ty, $buffer:expr) => {
+		use std::ptr::{null, null_mut};
+		let empty: api::Events = api::Events {
+			num_events: 0,
+			_reserved: 0,
+			events: [null_mut(); 2]
+		};
+		let api_events = $self.0.state().api_events;
+		let events = if api_events.is_null() {
+			&empty
+		} else {
+			unsafe { &*api_events }
+		};
+		($self.0).process::<$float>(events, $buffer);
+		$self.0.state_mut().api_events = null();
+	}
+}
+*/
 impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> NewFromHost for EasyVstWrapper<PID, S, P> {
 	fn new(host: HostCallback) -> Self {
 		let params = P::params();
@@ -227,9 +247,11 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 
 	fn process(&mut self, buffer: &mut AudioBuffer<f32>) {
 		self.process_f(buffer);
+		// process_with_midi!(self, f32, buffer);
 	}
 
 	fn process_f64(&mut self, buffer: &mut AudioBuffer<f64>) {
 		self.process_f(buffer);
+		// process_with_midi!(self, f64, buffer);
 	}
 }
