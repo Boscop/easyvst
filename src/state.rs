@@ -1,8 +1,8 @@
 use asprim::AsPrim;
 
-use vst2::plugin::HostCallback;
-use vst2::host::Host;
-use vst2::api;
+use vst::plugin::HostCallback;
+use vst::host::Host;
+use vst::api;
 
 use std::marker::PhantomData;
 use std::ptr::null;

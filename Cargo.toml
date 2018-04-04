@@ -1,11 +1,11 @@
 [package]
 name = "easyvst"
 version = "0.1.0"
-authors = ["Boscop <kingboscop@gmail.com>"]
+authors = ["Boscop"]
 
 [dependencies]
-# vst2 = { path = 'D:\projects\forks\rust-vst2', features = ['nightly'] }
-vst2 = { git = 'https://github.com/Boscop/rust-vst2', branch = 'nodefaultplugin', features = ['nightly'] }
+# vst = { path = 'D:\projects\forks\rust-vst' }
+vst = { git = 'https://github.com/Boscop/rust-vst', branch = 'dev' }
 log = "0.3"
 num-traits = "0.1"
 asprim = "0.1"

@@ -1,4 +1,4 @@
-#[macro_use] extern crate vst2;
+#[macro_use] extern crate vst;
 #[macro_use] extern crate easyvst;
 #[macro_use] extern crate log;
 extern crate log_panics;
@@ -11,10 +11,10 @@ use simplelog::*;
 use num_traits::Float;
 use asprim::AsPrim;
 
-use vst2::buffer::{AudioBuffer, SendEventBuffer};
-use vst2::plugin::{Category, Info, HostCallback, CanDo};
-use vst2::host::Host;
-use vst2::api::Events;
+use vst::buffer::{AudioBuffer, SendEventBuffer};
+use vst::plugin::{Category, Info, HostCallback, CanDo};
+use vst::host::Host;
+use vst::api::Events;
 
 use easyvst::*;
 
@@ -113,7 +113,7 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 			self.process_one_channel(input_buffer, output_buffer);
 		}
 		// forward all midi events
-		use vst2::event::Event;
+		use vst::event::Event;
 		let state = &mut self.state.user_state;
 		let events = events.events().filter_map(|e| {
 			match e {
@@ -125,9 +125,9 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		self.state.host.process_events(state.send_buffer.events());
 	}
 
-	fn can_do(&self, can_do: CanDo) -> vst2::api::Supported {
-		use vst2::api::Supported::*;
-		use vst2::plugin::CanDo::*;
+	fn can_do(&self, can_do: CanDo) -> vst::api::Supported {
+		use vst::api::Supported::*;
+		use vst::plugin::CanDo::*;
 
 		match can_do {
 			SendEvents | SendMidiEvent | ReceiveEvents | ReceiveMidiEvent => Yes,

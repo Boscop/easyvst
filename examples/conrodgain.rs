@@ -5,7 +5,7 @@
 	otherwise this plugin won't load correctly
 */
 
-#[macro_use] extern crate vst2;
+#[macro_use] extern crate vst;
 #[macro_use] extern crate easyvst;
 #[macro_use] extern crate log;
 extern crate log_panics;
@@ -20,11 +20,11 @@ use simplelog::*;
 use num_traits::Float;
 use asprim::AsPrim;
 
-use vst2::buffer::AudioBuffer;
-use vst2::plugin::{Category, Info, HostCallback};
-use vst2::host::Host;
-use vst2::editor::Editor;
-use vst2::api::Events;
+use vst::buffer::AudioBuffer;
+use vst::plugin::{Category, Info, HostCallback};
+use vst::host::Host;
+use vst::editor::Editor;
+use vst::api::Events;
 
 use easyvst::*;
 

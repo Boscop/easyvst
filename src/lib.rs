@@ -1,6 +1,6 @@
 #![feature(const_fn)]
 
-extern crate vst2;
+extern crate vst;
 #[macro_use] extern crate log;
 extern crate num_traits;
 extern crate asprim;
@@ -9,11 +9,11 @@ extern crate winapi;
 #[cfg(windows)]
 extern crate kernel32;
 
-use vst2::buffer::AudioBuffer;
-use vst2::plugin::{HostCallback, Plugin, Info, CanDo, NewFromHost};
-use vst2::editor::Editor;
-use vst2::api::{self, Supported};
-use vst2::channels::ChannelInfo;
+use vst::buffer::AudioBuffer;
+use vst::plugin::{HostCallback, Plugin, Info, CanDo};
+use vst::editor::Editor;
+use vst::api::{self, Supported};
+use vst::channels::ChannelInfo;
 
 use num_traits::Float;
 use asprim::AsPrim;
@@ -129,27 +129,8 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		self.0.state_mut().api_events = null();
 	}
 }
-/*
-macro_rules! process_with_midi {
-	($self:expr, $float:ty, $buffer:expr) => {
-		use std::ptr::{null, null_mut};
-		let empty: api::Events = api::Events {
-			num_events: 0,
-			_reserved: 0,
-			events: [null_mut(); 2]
-		};
-		let api_events = $self.0.state().api_events;
-		let events = if api_events.is_null() {
-			&empty
-		} else {
-			unsafe { &*api_events }
-		};
-		($self.0).process::<$float>(events, $buffer);
-		$self.0.state_mut().api_events = null();
-	}
-}
-*/
-impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> NewFromHost for EasyVstWrapper<PID, S, P> {
+
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
 	fn new(host: HostCallback) -> Self {
 		let params = P::params();
 		let param_count = params.len();
@@ -163,9 +144,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		}
 		EasyVstWrapper(p, PhantomData)
 	}
-}
 
-impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
 	fn get_info(&self) -> Info { self.0.get_info() }
 
 	fn init(&mut self) { self.0.init(); }
