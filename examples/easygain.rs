@@ -114,15 +114,13 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		}
 		// forward all midi events
 		use vst::event::Event;
-		let state = &mut self.state.user_state;
 		let events = events.events().filter_map(|e| {
 			match e {
 				Event::Midi(e) => Some(e),
 				_ => None
 			}
 		});
-		state.send_buffer.store_midi(events);
-		self.state.host.process_events(state.send_buffer.events());
+		self.state.user_state.send_buffer.send_events(events, &mut self.state.host);
 	}
 
 	fn can_do(&self, can_do: CanDo) -> vst::api::Supported {
