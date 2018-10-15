@@ -1,4 +1,4 @@
-#![feature(const_fn)]
+// #![feature(const_fn)]
 
 extern crate vst;
 #[macro_use] extern crate log;
