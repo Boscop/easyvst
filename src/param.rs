@@ -3,6 +3,7 @@ use asprim::AsPrim;
 
 use util::*;
 
+#[derive(Clone, Debug, Default)]
 pub struct ParamDef {
 	pub name: &'static str,
 	pub min: f32,
@@ -21,6 +22,7 @@ impl ParamDef {
 	}
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct Param {
 	pub def: ParamDef,
 	pub val: f32,
