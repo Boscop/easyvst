@@ -4,9 +4,10 @@ version = "0.1.0"
 authors = ["Boscop"]
 
 [dependencies]
-vst = { git = 'https://github.com/rust-dsp/rust-vst' }
+# vst = { git = 'https://github.com/rust-dsp/rust-vst' }
 # vst = { path = 'D:\projects\forks\rust-vst' }
 # vst = { git = 'https://github.com/Boscop/rust-vst', branch = 'dev' }
+vst = "^0.0"
 log = "0.3"
 num-traits = "0.1"
 asprim = "0.1"

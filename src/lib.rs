@@ -219,6 +219,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 	}
 
 	fn get_parameter_label(&self, index: i32) -> String {
+		trace!("get_parameter_label {}", index);
 		let i = index as usize;
 		let val = self.0.state().params[i].val;
 		self.0.state().user_state.format_param(i.into(), val)
