@@ -5,26 +5,32 @@
 	otherwise this plugin won't load correctly
 */
 
-#[macro_use] extern crate vst;
-#[macro_use] extern crate easyvst;
-#[macro_use] extern crate log;
-extern crate log_panics;
-extern crate simplelog;
-extern crate num_traits;
+#[macro_use]
+extern crate vst;
+#[macro_use]
+extern crate easyvst;
+#[macro_use]
+extern crate log;
 extern crate asprim;
+extern crate log_panics;
+extern crate num_traits;
+extern crate simplelog;
 extern crate winit;
-#[macro_use] extern crate conrod;
+#[macro_use]
+extern crate conrod;
 
 use simplelog::*;
 
-use num_traits::Float;
 use asprim::AsPrim;
+use num_traits::Float;
 
-use vst::buffer::AudioBuffer;
-use vst::plugin::{Category, Info, HostCallback};
-use vst::host::Host;
-use vst::editor::Editor;
-use vst::api::Events;
+use vst::{
+	api::Events,
+	buffer::AudioBuffer,
+	editor::Editor,
+	host::Host,
+	plugin::{Category, HostCallback, Info},
+};
 
 use easyvst::*;
 
@@ -79,11 +85,7 @@ impl MyPlugin {
 }
 
 impl EasyVst<ParamId, MyState> for MyPlugin {
-	fn params() -> Vec<ParamDef> {
-		vec![
-			ParamDef::new("Gain", -48., 12., 0.),
-		]
-	}
+	fn params() -> Vec<ParamDef> { vec![ParamDef::new("Gain", -48., 12., 0.)] }
 
 	fn state(&self) -> &MyPluginState { &self.state }
 
@@ -111,11 +113,14 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	}
 
 	fn init(&mut self) {
-		#[cfg(windows)]      let my_folder = fs::get_folder_path().unwrap();
-		#[cfg(not(windows))] let my_folder = ::std::path::PathBuf::from(".");
+		#[cfg(windows)]
+		let my_folder = fs::get_folder_path().unwrap();
+		#[cfg(not(windows))]
+		let my_folder = ::std::path::PathBuf::from(".");
 		let log_file = File::create(my_folder.join("conrodgain.log")).unwrap();
 		use std::fs::File;
-		let _ = CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
+		let _ =
+			CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
 		info!("init in host {:?}", self.state.host.get_info());
 		info!("my folder {:?}", my_folder);
 		self.state.user_state.my_folder = my_folder;
@@ -131,9 +136,10 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	fn get_editor(&mut self) -> Option<&mut Editor> { Some(self) }
 }
 
-use conrod::glium;
-use conrod::backend::glium::glium::glutin::WindowBuilder;
-use conrod::backend::glium::glium::DisplayBuild;
+use conrod::{
+	backend::glium::glium::{glutin::WindowBuilder, DisplayBuild},
+	glium,
+};
 
 use std::os::raw::c_void;
 
@@ -154,11 +160,10 @@ pub enum AppError {
 
 impl UiState {
 	pub fn new(my_folder: &Path, display: glium::Display) -> Result<Self, AppError> {
-		let (width, height) = display.get_window()
+		let (width, height) = display
+			.get_window()
 			.ok_or(AppError::GetWindowFail)
-			.and_then({|window|
-				window.get_inner_size().ok_or(AppError::GetInnerSizeFail)
-			})?;
+			.and_then({ |window| window.get_inner_size().ok_or(AppError::GetInnerSizeFail) })?;
 
 		info!("size : {}x{}", width, height);
 
@@ -172,14 +177,14 @@ impl UiState {
 			Ok(r) => r,
 			Err(e) => {
 				error!("Error creating Renderer: {:?}", e);
-				return Err(AppError::LoadRendererFail)
-			},
+				return Err(AppError::LoadRendererFail);
+			}
 		};
 
 		let image_map = conrod::image::Map::new();
 		let ids = Ids::new(ui.widget_id_generator());
 
-		Ok(UiState { display: display, ui: ui, image_map: image_map, renderer: renderer, ids: ids })
+		Ok(UiState { display, ui, image_map, renderer, ids })
 	}
 
 	fn draw(&mut self, state: &mut MyPluginState) {
@@ -205,12 +210,9 @@ impl UiState {
 }
 
 fn set_widgets(state: &mut MyPluginState, ref mut ui: conrod::UiCell, ids: &mut Ids) {
-	use conrod::{color, widget, Colorable, Labelable, Positionable, Sizeable, Widget, Borderable};
+	use conrod::{color, widget, Borderable, Colorable, Labelable, Positionable, Sizeable, Widget};
 
-	widget::Canvas::new()
-		.color(color::CHARCOAL)
-		.border(0.0)
-		.set(ids.body, ui);
+	widget::Canvas::new().color(color::CHARCOAL).border(0.0).set(ids.body, ui);
 	let gain_db = state.get_param(ParamId::GainDb);
 	let (min, max) = {
 		let def = state.get_param_def(ParamId::GainDb);
@@ -224,7 +226,8 @@ fn set_widgets(state: &mut MyPluginState, ref mut ui: conrod::UiCell, ids: &mut 
 		.border(1.0)
 		.label(&label)
 		.label_color(color::WHITE)
-	.set(ids.gain_slider, ui) {
+		.set(ids.gain_slider, ui)
+	{
 		state.set_param(ParamId::GainDb, val);
 	}
 	for _click in widget::Button::new()
@@ -233,7 +236,8 @@ fn set_widgets(state: &mut MyPluginState, ref mut ui: conrod::UiCell, ids: &mut 
 		.w_h(200.0, 30.0)
 		.color(color::RED)
 		.label("click me")
-	.set(ids.button, ui) {
+		.set(ids.button, ui)
+	{
 		info!("Bing!");
 	}
 }
@@ -267,18 +271,19 @@ impl Editor for MyPlugin {
 			.with_decorations(false)
 			.with_parent(parent);
 		match WindowBuilder::from_winit_builder(wb)
-			.with_multisampling(4)
-			// .with_depth_buffer(24)
-		.build_glium() {
+            .with_multisampling(4)
+            // .with_depth_buffer(24)
+            .build_glium()
+		{
 			Ok(display) => {
 				trace!("window created");
 				match UiState::new(&self.state.user_state.my_folder, display) {
 					Ok(ui) => self.ui = Some(ui),
-					Err(e) => error!("creating ui failed: {:?}", e)
+					Err(e) => error!("creating ui failed: {:?}", e),
 				}
 				trace!("self.ui created");
 			}
-			Err(e) => error!("creating window failed: {:?}", e)
+			Err(e) => error!("creating window failed: {:?}", e),
 		}
 	}
 
@@ -300,11 +305,7 @@ impl Editor for MyPlugin {
 }
 
 #[inline]
-pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F {
-	20.0.as_::<F>() * x.log10()
-}
+pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F { 20.0.as_::<F>() * x.log10() }
 
 #[inline]
-pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F {
-	10.0.as_::<F>().powf(x / 20.0.as_())
-}
+pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F { 10.0.as_::<F>().powf(x / 20.0.as_()) }

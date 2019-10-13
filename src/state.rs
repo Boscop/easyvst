@@ -1,11 +1,8 @@
 use asprim::AsPrim;
 
-use vst::plugin::HostCallback;
-use vst::host::Host;
-use vst::api;
+use vst::{api, host::Host, plugin::HostCallback};
 
-use std::marker::PhantomData;
-use std::ptr::null;
+use std::{marker::PhantomData, ptr::null};
 
 use param::*;
 
@@ -25,7 +22,7 @@ pub struct PluginState<PID, S: UserState<PID>> {
 impl<PID: Into<usize> + Copy, S: UserState<PID>> PluginState<PID, S> {
 	pub fn new(host: HostCallback, params: Vec<ParamDef>) -> Self {
 		Self {
-			host: host,
+			host,
 			params: params.into_iter().map(Param::new).collect(),
 			user_state: Default::default(),
 			api_events: null(),
@@ -33,13 +30,9 @@ impl<PID: Into<usize> + Copy, S: UserState<PID>> PluginState<PID, S> {
 		}
 	}
 
-	pub fn get_param_def(&self, param_id: PID) -> &ParamDef {
-		&self.params[param_id.into()].def
-	}
+	pub fn get_param_def(&self, param_id: PID) -> &ParamDef { &self.params[param_id.into()].def }
 
-	pub fn get_param(&self, param_id: PID) -> f32 {
-		self.params[param_id.into()].val
-	}
+	pub fn get_param(&self, param_id: PID) -> f32 { self.params[param_id.into()].val }
 
 	pub fn set_param(&mut self, param_id: PID, val: f32) {
 		let pid = param_id.into();

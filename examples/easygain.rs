@@ -1,20 +1,25 @@
-#[macro_use] extern crate vst;
-#[macro_use] extern crate easyvst;
-#[macro_use] extern crate log;
-extern crate log_panics;
-extern crate simplelog;
-extern crate num_traits;
+#[macro_use]
+extern crate vst;
+#[macro_use]
+extern crate easyvst;
+#[macro_use]
+extern crate log;
 extern crate asprim;
+extern crate log_panics;
+extern crate num_traits;
+extern crate simplelog;
 
 use simplelog::*;
 
-use num_traits::Float;
 use asprim::AsPrim;
+use num_traits::Float;
 
-use vst::buffer::{AudioBuffer, SendEventBuffer};
-use vst::plugin::{Category, Info, HostCallback, CanDo};
-use vst::host::Host;
-use vst::api::Events;
+use vst::{
+	api::Events,
+	buffer::{AudioBuffer, SendEventBuffer},
+	host::Host,
+	plugin::{CanDo, Category, HostCallback, Info},
+};
 
 use easyvst::*;
 
@@ -66,11 +71,7 @@ impl MyPlugin {
 }
 
 impl EasyVst<ParamId, MyState> for MyPlugin {
-	fn params() -> Vec<ParamDef> {
-		vec![
-			ParamDef::new("Gain", -48., 12., 0.),
-		]
-	}
+	fn params() -> Vec<ParamDef> { vec![ParamDef::new("Gain", -48., 12., 0.)] }
 
 	fn state(&self) -> &MyPluginState { &self.state }
 
@@ -98,11 +99,14 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 	}
 
 	fn init(&mut self) {
-		#[cfg(windows)]	  let my_folder = fs::get_folder_path().unwrap();
-		#[cfg(not(windows))] let my_folder = ::std::path::PathBuf::from(".");
+		#[cfg(windows)]
+		let my_folder = fs::get_folder_path().unwrap();
+		#[cfg(not(windows))]
+		let my_folder = ::std::path::PathBuf::from(".");
 		let log_file = File::create(my_folder.join("easygain.log")).unwrap();
 		use std::fs::File;
-		let _ = CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
+		let _ =
+			CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
 		info!("init in host {:?}", self.state.host.get_info());
 		info!("my folder {:?}", my_folder);
 	}
@@ -114,18 +118,15 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		}
 		// forward all midi events
 		use vst::event::Event;
-		let events = events.events().filter_map(|e| {
-			match e {
-				Event::Midi(e) => Some(e),
-				_ => None
-			}
+		let events = events.events().filter_map(|e| match e {
+			Event::Midi(e) => Some(e),
+			_ => None,
 		});
 		self.state.user_state.send_buffer.send_events(events, &mut self.state.host);
 	}
 
 	fn can_do(&self, can_do: CanDo) -> vst::api::Supported {
-		use vst::api::Supported::*;
-		use vst::plugin::CanDo::*;
+		use vst::{api::Supported::*, plugin::CanDo::*};
 
 		match can_do {
 			SendEvents | SendMidiEvent | ReceiveEvents | ReceiveMidiEvent => Yes,
@@ -135,11 +136,7 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 }
 
 #[inline]
-pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F {
-	20.0.as_::<F>() * x.log10()
-}
+pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F { 20.0.as_::<F>() * x.log10() }
 
 #[inline]
-pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F {
-	10.0.as_::<F>().powf(x / 20.0.as_())
-}
+pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F { 10.0.as_::<F>().powf(x / 20.0.as_()) }

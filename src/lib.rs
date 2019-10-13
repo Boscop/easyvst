@@ -1,65 +1,68 @@
 // #![feature(const_fn)]
 
 extern crate vst;
-#[macro_use] extern crate log;
-extern crate num_traits;
+#[macro_use]
+extern crate log;
 extern crate asprim;
 #[cfg(windows)]
-extern crate winapi;
-#[cfg(windows)]
 extern crate kernel32;
+extern crate num_traits;
+#[cfg(windows)]
+extern crate winapi;
 
-use vst::buffer::AudioBuffer;
-use vst::plugin::{HostCallback, Plugin, Info, CanDo};
-use vst::editor::Editor;
-use vst::api::{self, Supported};
-use vst::channels::ChannelInfo;
+use vst::{
+	api::{self, Supported},
+	buffer::AudioBuffer,
+	channels::ChannelInfo,
+	editor::Editor,
+	plugin::{CanDo, HostCallback, Info, Plugin},
+};
 
-use num_traits::Float;
 use asprim::AsPrim;
+use num_traits::Float;
 
 use std::os::raw::c_void;
 
-pub mod util;
+pub mod fs;
 mod param;
 mod state;
-pub mod fs;
+pub mod util;
 
 pub use param::*;
 pub use state::*;
 
 #[macro_export]
 macro_rules! impl_clike {
-	($t:ty, $($c:ty) +) => {
-		$(
-			impl From<$c> for $t {
-				fn from(v: $c) -> $t {
-					use std::mem;
-					unsafe { mem::transmute(v as usize) }
-				}
-			}
+    ($t:ty, $($c:ty) +) => {
+        $(
+            impl From<$c> for $t {
+                fn from(v: $c) -> $t {
+                    use std::mem;
+                    unsafe { mem::transmute(v as usize) }
+                }
+            }
 
-			impl Into<$c> for $t {
-				fn into(self) -> $c {
-					self as $c
-				}
-			}
-		)*
-	};
-	($t:ty) => {
-		impl_clike!($t, i8 i16 i32 i64 isize u8 u16 u32 u64 usize);
-	}
+            impl Into<$c> for $t {
+                fn into(self) -> $c {
+                    self as $c
+                }
+            }
+        )*
+    };
+    ($t:ty) => {
+        impl_clike!($t, i8 i16 i32 i64 isize u8 u16 u32 u64 usize);
+    }
 }
 
 #[macro_export]
 macro_rules! easyvst {
-	($param:ty, $state:ty, $plugin:ty) => {
-		impl_clike!($param);
-		plugin_main!(EasyVstWrapper<$param, $state, $plugin>);
-		impl Default for $param {
-			fn default() -> Self { 0.into() }
-		}
-	}
+    ($param:ty, $state:ty, $plugin:ty) => {
+        impl_clike!($param);
+        plugin_main!(EasyVstWrapper<$param, $state, $plugin>);
+        impl Default for $param {
+            fn default() -> Self { 0.into() }
+        }
+    }
 }
 
 #[allow(unused_variables)]
@@ -83,20 +86,16 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 		Supported::Maybe
 	}
 	fn get_tail_size(&self) -> isize { 0 }
-	fn get_editor(&mut self) -> Option<&mut Editor> { None }
+	fn get_editor(&mut self) -> Option<&mut dyn Editor> { None }
 	fn get_preset_data(&mut self) -> Vec<u8> { Vec::new() }
 	fn get_bank_data(&mut self) -> Vec<u8> { Vec::new() }
 	fn load_preset_data(&mut self, data: &[u8]) {}
 	fn load_bank_data(&mut self, data: &[u8]) {}
 	fn get_input_info(&self, input: i32) -> ChannelInfo {
-		ChannelInfo::new(format!("Input channel {}", input),
-						 Some(format!("In {}", input)),
-						 true, None)
+		ChannelInfo::new(format!("Input channel {}", input), Some(format!("In {}", input)), true, None)
 	}
 	fn get_output_info(&self, output: i32) -> ChannelInfo {
-		ChannelInfo::new(format!("Output channel {}", output),
-						 Some(format!("Out {}", output)),
-						 true, None)
+		ChannelInfo::new(format!("Output channel {}", output), Some(format!("Out {}", output)), true, None)
 	}
 
 	fn state(&self) -> &PluginState<PID, S>;
@@ -114,23 +113,17 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 	#[inline(always)]
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
 		use std::ptr::{null, null_mut};
-		let empty: api::Events = api::Events {
-			num_events: 0,
-			_reserved: 0,
-			events: [null_mut(); 2]
-		};
+		let empty: api::Events = api::Events { num_events: 0, _reserved: 0, events: [null_mut(); 2] };
 		let api_events = self.0.state().api_events;
-		let events = if api_events.is_null() {
-			&empty
-		} else {
-			unsafe { &*api_events }
-		};
+		let events = if api_events.is_null() { &empty } else { unsafe { &*api_events } };
 		self.0.process(events, buffer);
 		self.0.state_mut().api_events = null();
 	}
 }
 
-impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin for EasyVstWrapper<PID, S, P> {
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> Plugin
+	for EasyVstWrapper<PID, S, P>
+{
 	fn new(host: HostCallback) -> Self {
 		let params = P::params();
 		let param_count = params.len();
@@ -159,7 +152,9 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 
 	fn can_be_automated(&self, index: i32) -> bool { self.0.can_be_automated(index) }
 
-	fn string_to_parameter(&mut self, index: i32, text: String) -> bool { self.0.string_to_parameter(index, text) }
+	fn string_to_parameter(&mut self, index: i32, text: String) -> bool {
+		self.0.string_to_parameter(index, text)
+	}
 
 	fn set_sample_rate(&mut self, rate: f32) { self.0.set_sample_rate(rate); }
 
@@ -182,7 +177,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		state.api_events = events as *const _;
 	}
 
-	fn get_editor(&mut self) -> Option<&mut Editor> { self.0.get_editor() }
+	fn get_editor(&mut self) -> Option<&mut dyn Editor> { self.0.get_editor() }
 
 	fn get_preset_data(&mut self) -> Vec<u8> { self.0.get_preset_data() }
 
@@ -214,9 +209,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		self.0.state().params[index as usize].def.name.to_string()
 	}
 
-	fn get_parameter_text(&self, _index: i32) -> String {
-		"".to_string()
-	}
+	fn get_parameter_text(&self, _index: i32) -> String { "".to_string() }
 
 	fn get_parameter_label(&self, index: i32) -> String {
 		trace!("get_parameter_label {}", index);

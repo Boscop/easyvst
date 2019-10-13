@@ -1,14 +1,12 @@
 use std::path::{Path, PathBuf};
 
 #[cfg(windows)]
+#[inline(never)]
 pub fn get_folder_path() -> Option<PathBuf> {
-	use winapi::*;
 	use kernel32::*;
+	use winapi::*;
 
-	use std::ptr::null_mut;
-	use std::mem;
-	use std::ffi::OsString;
-	use std::os::windows::ffi::OsStringExt;
+	use std::{ffi::OsString, mem, os::windows::ffi::OsStringExt, ptr::null_mut};
 
 	const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
 	const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
@@ -16,7 +14,12 @@ pub fn get_folder_path() -> Option<PathBuf> {
 	let mut hm: HMODULE = null_mut();
 
 	unsafe {
-		if GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, &get_folder_path as *const _ as LPCWSTR, &mut hm as *mut _) == 0 {
+		if GetModuleHandleExW(
+			GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+			get_folder_path as LPCWSTR,
+			&mut hm as *mut _,
+		) == 0
+		{
 			error!("GetModuleHandleExW() failed with {}", GetLastError());
 			None
 		} else {
