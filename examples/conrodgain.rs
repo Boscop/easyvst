@@ -85,11 +85,17 @@ impl MyPlugin {
 }
 
 impl EasyVst<ParamId, MyState> for MyPlugin {
-	fn params() -> Vec<ParamDef> { vec![ParamDef::new("Gain", -48., 12., 0.)] }
+	fn params() -> Vec<ParamDef> {
+		vec![ParamDef::new("Gain", -48., 12., 0.)]
+	}
 
-	fn state(&self) -> &MyPluginState { &self.state }
+	fn state(&self) -> &MyPluginState {
+		&self.state
+	}
 
-	fn state_mut(&mut self) -> &mut MyPluginState { &mut self.state }
+	fn state_mut(&mut self) -> &mut MyPluginState {
+		&mut self.state
+	}
 
 	fn get_info(&self) -> Info {
 		Info {
@@ -119,8 +125,11 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		let my_folder = ::std::path::PathBuf::from(".");
 		let log_file = File::create(my_folder.join("conrodgain.log")).unwrap();
 		use std::fs::File;
-		let _ =
-			CombinedLogger::init(vec![WriteLogger::new(LogLevelFilter::Info, Config::default(), log_file)]);
+		let _ = CombinedLogger::init(vec![WriteLogger::new(
+			LogLevelFilter::Info,
+			Config::default(),
+			log_file,
+		)]);
 		info!("init in host {:?}", self.state.host.get_info());
 		info!("my folder {:?}", my_folder);
 		self.state.user_state.my_folder = my_folder;
@@ -133,7 +142,9 @@ impl EasyVst<ParamId, MyState> for MyPlugin {
 		}
 	}
 
-	fn get_editor(&mut self) -> Option<&mut Editor> { Some(self) }
+	fn get_editor(&mut self) -> Option<&mut Editor> {
+		Some(self)
+	}
 }
 
 use conrod::{
@@ -305,7 +316,11 @@ impl Editor for MyPlugin {
 }
 
 #[inline]
-pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F { 20.0.as_::<F>() * x.log10() }
+pub fn amp_to_db<F: Float + AsPrim>(x: F) -> F {
+	20.0.as_::<F>() * x.log10()
+}
 
 #[inline]
-pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F { 10.0.as_::<F>().powf(x / 20.0.as_()) }
+pub fn db_to_amp<F: Float + AsPrim>(x: F) -> F {
+	10.0.as_::<F>().powf(x / 20.0.as_())
+}

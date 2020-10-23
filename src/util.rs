@@ -13,4 +13,6 @@ pub fn lerp<F: Float>(x1: F, x2: F, y1: F, y2: F, x: F) -> F {
 }
 
 #[inline]
-pub fn lerp_r<F: Float>(x1: F, x2: F, y1: F, y2: F, y: F) -> F { lerp(y1, y2, x1, x2, y) }
+pub fn lerp_r<F: Float>(x1: F, x2: F, y1: F, y2: F, y: F) -> F {
+	lerp(y1, y2, x1, x2, y)
+}

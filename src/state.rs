@@ -30,9 +30,13 @@ impl<PID: Into<usize> + Copy, S: UserState<PID>> PluginState<PID, S> {
 		}
 	}
 
-	pub fn get_param_def(&self, param_id: PID) -> &ParamDef { &self.params[param_id.into()].def }
+	pub fn get_param_def(&self, param_id: PID) -> &ParamDef {
+		&self.params[param_id.into()].def
+	}
 
-	pub fn get_param(&self, param_id: PID) -> f32 { self.params[param_id.into()].val }
+	pub fn get_param(&self, param_id: PID) -> f32 {
+		self.params[param_id.into()].val
+	}
 
 	pub fn set_param(&mut self, param_id: PID, val: f32) {
 		let pid = param_id.into();

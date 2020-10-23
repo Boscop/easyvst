@@ -71,31 +71,59 @@ pub trait EasyVst<PID, S: UserState<PID>> {
 	fn new(state: PluginState<PID, S>) -> Self;
 	fn init(&mut self) {}
 	fn change_preset(&mut self, preset: i32) {}
-	fn get_preset_num(&self) -> i32 { 0 }
+	fn get_preset_num(&self) -> i32 {
+		0
+	}
 	fn set_preset_name(&mut self, name: String) {}
-	fn get_preset_name(&self, preset: i32) -> String { "".to_string() }
-	fn can_be_automated(&self, index: i32) -> bool { true }
-	fn string_to_parameter(&mut self, index: i32, text: String) -> bool { false }
+	fn get_preset_name(&self, preset: i32) -> String {
+		"".to_string()
+	}
+	fn can_be_automated(&self, index: i32) -> bool {
+		true
+	}
+	fn string_to_parameter(&mut self, index: i32, text: String) -> bool {
+		false
+	}
 	fn set_sample_rate(&mut self, rate: f32) {}
 	fn set_block_size(&mut self, size: i64) {}
 	fn resume(&mut self) {}
 	fn suspend(&mut self) {}
-	fn vendor_specific(&mut self, index: i32, value: isize, ptr: *mut c_void, opt: f32) -> isize { 0 }
+	fn vendor_specific(&mut self, index: i32, value: isize, ptr: *mut c_void, opt: f32) -> isize {
+		0
+	}
 	fn can_do(&self, can_do: CanDo) -> Supported {
 		trace!("Host is asking if plugin can: {:?}.", can_do);
 		Supported::Maybe
 	}
-	fn get_tail_size(&self) -> isize { 0 }
-	fn get_editor(&mut self) -> Option<&mut dyn Editor> { None }
-	fn get_preset_data(&mut self) -> Vec<u8> { Vec::new() }
-	fn get_bank_data(&mut self) -> Vec<u8> { Vec::new() }
+	fn get_tail_size(&self) -> isize {
+		0
+	}
+	fn get_editor(&mut self) -> Option<&mut dyn Editor> {
+		None
+	}
+	fn get_preset_data(&mut self) -> Vec<u8> {
+		Vec::new()
+	}
+	fn get_bank_data(&mut self) -> Vec<u8> {
+		Vec::new()
+	}
 	fn load_preset_data(&mut self, data: &[u8]) {}
 	fn load_bank_data(&mut self, data: &[u8]) {}
 	fn get_input_info(&self, input: i32) -> ChannelInfo {
-		ChannelInfo::new(format!("Input channel {}", input), Some(format!("In {}", input)), true, None)
+		ChannelInfo::new(
+			format!("Input channel {}", input),
+			Some(format!("In {}", input)),
+			true,
+			None,
+		)
 	}
 	fn get_output_info(&self, output: i32) -> ChannelInfo {
-		ChannelInfo::new(format!("Output channel {}", output), Some(format!("Out {}", output)), true, None)
+		ChannelInfo::new(
+			format!("Output channel {}", output),
+			Some(format!("Out {}", output)),
+			true,
+			None,
+		)
 	}
 
 	fn state(&self) -> &PluginState<PID, S>;
@@ -109,11 +137,14 @@ use std::marker::PhantomData;
 #[derive(Default)]
 pub struct EasyVstWrapper<PID, S: UserState<PID>, P: EasyVst<PID, S>>(P, PhantomData<fn(PID, S)>);
 
-impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>> EasyVstWrapper<PID, S, P> {
+impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S>>
+	EasyVstWrapper<PID, S, P>
+{
 	#[inline(always)]
 	fn process_f<T: Float + AsPrim>(&mut self, buffer: &mut AudioBuffer<T>) {
 		use std::ptr::{null, null_mut};
-		let empty: api::Events = api::Events { num_events: 0, _reserved: 0, events: [null_mut(); 2] };
+		let empty: api::Events =
+			api::Events { num_events: 0, _reserved: 0, events: [null_mut(); 2] };
 		let api_events = self.0.state().api_events;
 		let events = if api_events.is_null() { &empty } else { unsafe { &*api_events } };
 		self.0.process(events, buffer);
@@ -130,7 +161,7 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		let mut p = P::new(PluginState::new(host, params));
 		{
 			let state = p.state_mut();
-			for i in 0..param_count {
+			for i in 0 .. param_count {
 				let val = state.params[i].val;
 				state.user_state.param_changed(&mut state.host, i.into(), val);
 			}
@@ -138,58 +169,98 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		EasyVstWrapper(p, PhantomData)
 	}
 
-	fn get_info(&self) -> Info { self.0.get_info() }
+	fn get_info(&self) -> Info {
+		self.0.get_info()
+	}
 
-	fn init(&mut self) { self.0.init(); }
+	fn init(&mut self) {
+		self.0.init();
+	}
 
-	fn change_preset(&mut self, preset: i32) { self.0.change_preset(preset); }
+	fn change_preset(&mut self, preset: i32) {
+		self.0.change_preset(preset);
+	}
 
-	fn get_preset_num(&self) -> i32 { self.0.get_preset_num() }
+	fn get_preset_num(&self) -> i32 {
+		self.0.get_preset_num()
+	}
 
-	fn set_preset_name(&mut self, name: String) { self.0.set_preset_name(name); }
+	fn set_preset_name(&mut self, name: String) {
+		self.0.set_preset_name(name);
+	}
 
-	fn get_preset_name(&self, preset: i32) -> String { self.0.get_preset_name(preset) }
+	fn get_preset_name(&self, preset: i32) -> String {
+		self.0.get_preset_name(preset)
+	}
 
-	fn can_be_automated(&self, index: i32) -> bool { self.0.can_be_automated(index) }
+	fn can_be_automated(&self, index: i32) -> bool {
+		self.0.can_be_automated(index)
+	}
 
 	fn string_to_parameter(&mut self, index: i32, text: String) -> bool {
 		self.0.string_to_parameter(index, text)
 	}
 
-	fn set_sample_rate(&mut self, rate: f32) { self.0.set_sample_rate(rate); }
+	fn set_sample_rate(&mut self, rate: f32) {
+		self.0.set_sample_rate(rate);
+	}
 
-	fn set_block_size(&mut self, size: i64) { self.0.set_block_size(size); }
+	fn set_block_size(&mut self, size: i64) {
+		self.0.set_block_size(size);
+	}
 
-	fn resume(&mut self) { self.0.resume(); }
+	fn resume(&mut self) {
+		self.0.resume();
+	}
 
-	fn suspend(&mut self) { self.0.suspend(); }
+	fn suspend(&mut self) {
+		self.0.suspend();
+	}
 
 	fn vendor_specific(&mut self, index: i32, value: isize, ptr: *mut c_void, opt: f32) -> isize {
 		self.0.vendor_specific(index, value, ptr, opt)
 	}
 
-	fn can_do(&self, can_do: CanDo) -> Supported { self.0.can_do(can_do) }
+	fn can_do(&self, can_do: CanDo) -> Supported {
+		self.0.can_do(can_do)
+	}
 
-	fn get_tail_size(&self) -> isize { self.0.get_tail_size() }
+	fn get_tail_size(&self) -> isize {
+		self.0.get_tail_size()
+	}
 
 	fn process_events(&mut self, events: &api::Events) {
 		let state = self.0.state_mut();
 		state.api_events = events as *const _;
 	}
 
-	fn get_editor(&mut self) -> Option<&mut dyn Editor> { self.0.get_editor() }
+	fn get_editor(&mut self) -> Option<&mut dyn Editor> {
+		self.0.get_editor()
+	}
 
-	fn get_preset_data(&mut self) -> Vec<u8> { self.0.get_preset_data() }
+	fn get_preset_data(&mut self) -> Vec<u8> {
+		self.0.get_preset_data()
+	}
 
-	fn get_bank_data(&mut self) -> Vec<u8> { self.0.get_bank_data() }
+	fn get_bank_data(&mut self) -> Vec<u8> {
+		self.0.get_bank_data()
+	}
 
-	fn load_preset_data(&mut self, data: &[u8]) { self.0.load_preset_data(data); }
+	fn load_preset_data(&mut self, data: &[u8]) {
+		self.0.load_preset_data(data);
+	}
 
-	fn load_bank_data(&mut self, data: &[u8]) { self.0.load_bank_data(data); }
+	fn load_bank_data(&mut self, data: &[u8]) {
+		self.0.load_bank_data(data);
+	}
 
-	fn get_input_info(&self, input: i32) -> ChannelInfo { self.0.get_input_info(input) }
+	fn get_input_info(&self, input: i32) -> ChannelInfo {
+		self.0.get_input_info(input)
+	}
 
-	fn get_output_info(&self, output: i32) -> ChannelInfo { self.0.get_output_info(output) }
+	fn get_output_info(&self, output: i32) -> ChannelInfo {
+		self.0.get_output_info(output)
+	}
 
 	fn get_parameter(&self, index: i32) -> f32 {
 		trace!("get_parameter {}", index);
@@ -209,7 +280,9 @@ impl<PID: Into<usize> + From<usize> + Copy, S: UserState<PID>, P: EasyVst<PID, S
 		self.0.state().params[index as usize].def.name.to_string()
 	}
 
-	fn get_parameter_text(&self, _index: i32) -> String { "".to_string() }
+	fn get_parameter_text(&self, _index: i32) -> String {
+		"".to_string()
+	}
 
 	fn get_parameter_label(&self, index: i32) -> String {
 		trace!("get_parameter_label {}", index);

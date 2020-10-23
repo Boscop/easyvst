@@ -22,14 +22,18 @@ pub struct Param {
 }
 
 impl Param {
-	pub fn new(param: ParamDef) -> Self { Self { val: param.default, def: param } }
+	pub fn new(param: ParamDef) -> Self {
+		Self { val: param.default, def: param }
+	}
 
 	pub fn norm(&self) -> f32 {
 		// TODO: support non-linear relationships
 		lerp_r(0.0, 1.0, self.def.min.as_(), self.def.max.as_(), self.val.as_()).as_f32()
 	}
 
-	pub fn set(&mut self, val: f32) { self.val = clamp(val, self.def.min, self.def.max); }
+	pub fn set(&mut self, val: f32) {
+		self.val = clamp(val, self.def.min, self.def.max);
+	}
 
 	pub fn user_sets_norm(&mut self, val: f32) {
 		let val = lerp(0.0.as_(), 1.0.as_(), self.def.min.as_(), self.def.max.as_(), val.as_());

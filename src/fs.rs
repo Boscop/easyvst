@@ -29,7 +29,7 @@ pub fn get_folder_path() -> Option<PathBuf> {
 				error!("GetModuleFileNameW() failed with {}", GetLastError());
 				None
 			} else {
-				let file_path = OsString::from_wide(&path[..len]);
+				let file_path = OsString::from_wide(&path[.. len]);
 				Some(Path::new(&file_path).parent().unwrap().into())
 			}
 		}
