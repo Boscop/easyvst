@@ -11,7 +11,7 @@ pub struct ParamDef {
 }
 
 impl ParamDef {
-	pub fn new(name: &'static str, min: f32, max: f32, default: f32) -> Self {
+	pub const fn new(name: &'static str, min: f32, max: f32, default: f32) -> Self {
 		Self { name, min, max, default }
 	}
 }
@@ -22,7 +22,7 @@ pub struct Param {
 }
 
 impl Param {
-	pub fn new(param: ParamDef) -> Self {
+	pub const fn new(param: ParamDef) -> Self {
 		Self { val: param.default, def: param }
 	}
 
