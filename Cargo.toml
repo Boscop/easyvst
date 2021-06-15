@@ -2,35 +2,10 @@
 name = "easyvst"
 version = "0.1.0"
 authors = ["Boscop"]
+edition = "2018"
 
 [dependencies]
-# vst = { git = 'https://github.com/rust-dsp/rust-vst' }
-# vst = { path = 'D:\projects\forks\rust-vst' }
-# vst = { git = 'https://github.com/Boscop/rust-vst', branch = 'dev' }
-vst = "0.1"
 log = "0.3"
-num-traits = "0.1"
-asprim = "0.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-winapi = "0.2"
-kernel32-sys = "0.2"
-
-[dev-dependencies]
-log-panics = "1.1"
-simplelog = "0.4"
-# winit = { path = 'D:\projects\forks\winit-vst' }
-winit = { git = 'https://github.com/Boscop/winit-vst' }
-conrod = { version = "0.52", features = ["piston", "glium", "winit"] }
-
-[replace]
-# "winit:0.5.11" = { path = 'D:\projects\forks\winit-vst' }
-"winit:0.5.11" = { git = 'https://github.com/Boscop/winit-vst' }
-
-[[example]]
-name = "easygain"
-crate-type = ["cdylib"]
-
-[[example]]
-name = "conrodgain"
-crate-type = ["cdylib"]
+winapi = { version = "0.3", features = ["minwindef", "errhandlingapi", "libloaderapi"] }

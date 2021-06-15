@@ -1,18 +1,25 @@
-use std::path::{Path, PathBuf};
+use std::{
+	ffi::OsString,
+	mem,
+	os::windows::ffi::OsStringExt,
+	path::{Path, PathBuf},
+	ptr::null_mut,
+};
+use winapi::{
+	shared::minwindef::{HMODULE, MAX_PATH},
+	um::{
+		errhandlingapi::GetLastError,
+		libloaderapi::{
+			GetModuleFileNameW, GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+			GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+		},
+		winnt::{LPCWSTR, WCHAR},
+	},
+};
 
-#[cfg(windows)]
 #[inline(never)]
 pub fn get_folder_path() -> Option<PathBuf> {
-	use kernel32::*;
-	use winapi::*;
-
-	use std::{ffi::OsString, mem, os::windows::ffi::OsStringExt, ptr::null_mut};
-
-	const GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS: DWORD = 0x00000004;
-	const GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT: DWORD = 0x00000002;
-
 	let mut hm: HMODULE = null_mut();
-
 	unsafe {
 		if GetModuleHandleExW(
 			GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
